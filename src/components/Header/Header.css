@@ -1,0 +1,8 @@
+.navigation{
+    display: flex;
+    justify-content: center;
+}
+.navigation a{
+    text-decoration: none;
+    padding-right: 5px;
+}
