@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { Button, Form } from 'react-bootstrap';
-import { useSignInWithEmailAndPassword, useSignInWithGoogle } from 'react-firebase-hooks/auth';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useSendPasswordResetEmail, useSignInWithEmailAndPassword, useSignInWithGoogle } from 'react-firebase-hooks/auth';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import auth from '../../firebase.init';
+import SocialLogin from '../SocialLogin/SocialLogin';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -14,12 +17,23 @@ const Login = () => {
     loading,
     error,
   ] = useSignInWithEmailAndPassword(auth);
-
-  const [signInWithGoogle] = useSignInWithGoogle(auth);
+  const [sendPasswordResetEmail, sending, restError] = useSendPasswordResetEmail(
+    auth
+  );
 
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || '/';
+  let errorElement
+
+  if (error) {
+
+    errorElement = <div>
+        <p className='text-danger'>Error:{error?.message}</p>
+    </div>
+
+}
+
 
 
   const handleEmail = event => {
@@ -41,29 +55,36 @@ const Login = () => {
     signInWithEmailAndPassword(email, password)
 
   }
+  const handleForgetPassword = async (event) => {
+      await sendPasswordResetEmail(email)
+      toast('email sent')
+  }
   return (
     <div className='w-25 mx-auto'>
       <Form onSubmit={handleFromSubmit}>
+      <h2 className='text-center py-5'>Login</h2>
         <Form.Group className="mb-3" controlId="formBasicEmail">
-          <Form.Label>Email address</Form.Label>
+        
           <Form.Control onBlur={handleEmail} type="email" placeholder="Enter email" />
-          <Form.Text className="text-muted">
-            We'll never share your email with anyone else.
-          </Form.Text>
+  
         </Form.Group>
 
         <Form.Group className="mb-3" controlId="formBasicPassword">
-          <Form.Label>Password</Form.Label>
+        
           <Form.Control onBlur={handlePassword} type="password" placeholder="Password" />
         </Form.Group>
-        <Form.Group className="mb-3" controlId="formBasicCheckbox">
-          <Form.Check type="checkbox" label="Check me out" />
-        </Form.Group>
+        
         <Button variant="primary" type="submit">
           Submit
         </Button>
-        <Button onClick={() => signInWithGoogle()}>Sing in with google</Button>
+        <p>New to motel? <Link to='/register'>Please Register</Link></p>
+        <p>Forget Password? <button 
+        className='text-primary btn btn-link' to='/register' onClick={handleForgetPassword}>Reset Password</button> </p>
       </Form>
+      {errorElement}
+
+      <SocialLogin></SocialLogin>
+      <ToastContainer />
     </div>
 
   );

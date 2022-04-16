@@ -1,23 +1,33 @@
-import { useCreateUserWithEmailAndPassword } from 'react-firebase-hooks/auth';
+import { useCreateUserWithEmailAndPassword, useUpdateProfile } from 'react-firebase-hooks/auth';
 import React, { useState } from 'react';
 import { Button, Form } from 'react-bootstrap';
 import auth from '../../firebase.init'
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { BeakerIcon } from '@heroicons/react/solid'
+import SocialLogin from '../SocialLogin/SocialLogin';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Register = () => {
+    const [name, setName] =useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [inputError, setInputError] = useState('');
+    const [agree, setAgree] = useState(false)
     const [
         signInWithEmailAndPassword,
         user,
         loading,
         error,
-      ]  = useCreateUserWithEmailAndPassword(auth)
+      ]  = useCreateUserWithEmailAndPassword(auth,{sendEmailVerification:true})
+      const [updateProfile, updating, profileError] = useUpdateProfile(auth);
       const navigate = useNavigate();
 
+    const handleName = event => {
+        setName(event.target.value);
+        
+    }
     const handleEmail = event => {
         setEmail(event.target.value);
         
@@ -30,29 +40,34 @@ const Register = () => {
     const handleConfirmPassword = event =>{
         setConfirmPassword(event.target.value)
     }
-    if(user){
-        navigate('/')
-    }
+    
 
-    const handleFromSubmit = event => {
+    const handleFromSubmit = async (event) => {
+        console.log(event.target);
         event.preventDefault();
         if(password !== confirmPassword){
             setInputError("password didn't match");
             return
         }
 
-        signInWithEmailAndPassword(email, password)
+        await signInWithEmailAndPassword(email, password)
+        await updateProfile({ displayName :name});
+        toast('Updated profile');
+        navigate('/')
+        
+        
     }
 
     return (
         <div className='w-25 mx-auto'>
             <Form onSubmit={handleFromSubmit}>
+                <Form.Group className="mb-3" controlId="fromBasicName">
+                    <Form.Label>Your Name</Form.Label>
+                    <Form.Control onBlur={handleName} type="text" placeholder="Enter your name" />
+                </Form.Group>
                 <Form.Group className="mb-3" controlId="formBasicEmail">
                     <Form.Label>Email address</Form.Label>
                     <Form.Control onBlur={handleEmail} type="email" placeholder="Enter email" />
-                    <Form.Text className="text-muted">
-                        We'll never share your email with anyone else.
-                    </Form.Text>
                 </Form.Group>
 
                 <Form.Group className="mb-3" controlId="formBasicPassword">
@@ -63,15 +78,16 @@ const Register = () => {
                     <Form.Label>Confirm Password</Form.Label>
                     <Form.Control onBlur={handleConfirmPassword} type="password" placeholder="Confirm Password" />
                 </Form.Group>
-                <Form.Group className="mb-3" controlId="formBasicCheckbox">
-                    <p>{inputError}</p>
-                    <Form.Check type="checkbox" label="Check me out" />
-                </Form.Group>
-                <Button></Button>
-                <Button variant="primary" type="submit">
+                <input onClick={() => setAgree(!agree)} type="checkbox" name="terms" id="terms" />
+                <label className={`ps-2 ${agree? 'text-primary fw-bold': 'text-muted'}`} htmlFor="terms">Accept Genius Car Terms and Condition</label>
+                <p>{inputError}</p>
+                <Button disabled={!agree} variant="primary" type="submit">
                     Submit
                 </Button>
+                <p>Already have an account? <Link to='/login'>Please Login</Link></p>
             </Form>
+            <SocialLogin></SocialLogin>
+            <ToastContainer />
         </div>
     );
 };
